@@ -10,6 +10,7 @@ Tank::Tank(QGraphicsView* view, QGraphicsItem* parent) : QGraphicsPixmapItem(par
     v = view;
 
     turret = new QGraphicsPixmapItem();
+    fireFlash = new QGraphicsPixmapItem();
 
     //Sets up Key Map
     keys.insert(Qt::Key_W, false);
@@ -39,24 +40,27 @@ Tank::Tank(QGraphicsView* view, QGraphicsItem* parent) : QGraphicsPixmapItem(par
 
     keyTimer = new QTimer();
 
-    bulletAudioPlayer->setVolume(1);
-    movingAudioPlayer->setVolume(1);
-    idleAudioPlayer->setVolume(1);
+    bulletAudioPlayer->setVolume(.3);
+    movingAudioPlayer->setVolume(.1);
+    idleAudioPlayer->setVolume(.1);
 
     bulletHandler->setAudioOutput(bulletAudioPlayer);
-    bulletHandler->setSource(QUrl("qrc:/sounds/bullet.mp3"));
+    bulletHandler->setSource(QUrl("qrc:/sounds/bulletFireThree.wav"));
 
     movingHandler->setAudioOutput(movingAudioPlayer);
-    movingHandler->setSource(QUrl("qrc:/sounds/tankMoving.mp3"));
+    movingHandler->setSource(QUrl("qrc:/sounds/engineMovingThree.wav"));
 
     idleHandler->setAudioOutput(idleAudioPlayer);
-    idleHandler->setSource(QUrl("qrc:/sounds/tankIdle.mp3"));
+    idleHandler->setSource(QUrl("qrc:/sounds/engineIdleThree.wav"));
 
     idleHandler->setLoops(QMediaPlayer::Infinite);
     idleHandler->play();
 
     connect(keyTimer, SIGNAL(timeout()), this, SLOT(frame()));
     keyTimer->start(7);
+
+    this->setZValue(-3);
+
 }
 
 
@@ -67,6 +71,11 @@ void Tank::createTurret() {
     turret->setPixmap(QPixmap(":/images/greenTurret.png"));
     turret->setTransformOriginPoint(turret->boundingRect().width() / 2, turret->boundingRect().height() / 2 + rotationPoint);
     scene()->addItem(turret);
+
+    fireFlash->setPixmap(QPixmap(":/images/gunFlash.png"));
+    fireFlash->setVisible(false);
+    fireFlash->setZValue(-2);
+    scene()->addItem(fireFlash);
 }
 
 void Tank::keyPressEvent(QKeyEvent* event)
@@ -95,6 +104,16 @@ void Tank::frame() {
     float angleDegrees = angle * (180 / M_PI);
 
     turret->setRotation(angleDegrees + 90);
+
+    // Calculate x and y velocity for tank gun muzzle flash
+    int dx = 50 * cos(angle);
+    int dy = 50 * sin(angle);
+
+    fireFlash->setPos(x() + this->boundingRect().width() / 2 - fireFlash->boundingRect().width()/2, y() + this->boundingRect().height() / 2 - fireFlash->boundingRect().height() / 2);
+    fireFlash->moveBy(dx, dy);
+    fireFlash->setTransformOriginPoint(fireFlash->boundingRect().width() / 2, fireFlash->boundingRect().height() / 2);
+    fireFlash->setRotation(angleDegrees + 90);
+
 
     //Makes view camera follow the tank
     //v->centerOn(this);
@@ -160,10 +179,11 @@ void Tank::frame() {
     // Shooting (Spacebar)
     if (keys[Qt::Key_Space]) {
         if (!fireRateTimer->isActive()) {
+            fireFlash->setVisible(true);
 
-            //Create Bullet and gives it the direction the tank is facing(for directional firing) and cursor position (for swivel firing)
             Bullet* bullet = new Bullet(direction, angle);
             bullet->setPos(x() + this->boundingRect().width() / 2 - bullet->boundingRect().width() / 2, y() + this->boundingRect().height() / 2 - bullet->boundingRect().height() / 2);
+            bullet->setZValue(-1);
             scene()->addItem(bullet);
 
             //This can be set to either 'fire()' for cursor shooting or 'fireAlt()' for directional shooting
@@ -177,7 +197,13 @@ void Tank::frame() {
             fireRateTimer->start();
         }
     }
+
     if (fireRateTimer->isActive()) {
+
+        if (fireRateTimer->remainingTime() / (float)fireRateTimer->interval() < .95) {
+            fireFlash->setVisible(false);
+        }
+
         if (fireRateTimer->remainingTime() / (float)fireRateTimer->interval() > .8) {
             QCursor cursor = QCursor(QPixmap(":/images/greenCrosshairGearZero.png"));
             v->setCursor(cursor);
@@ -204,7 +230,6 @@ void Tank::frame() {
         QCursor cursor = QCursor(QPixmap(":/images/crosshair.png"));
         v->setCursor(cursor);
     }
-    //
 }
 
 bool Tank::isMoving() {

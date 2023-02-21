@@ -42,6 +42,7 @@ private:
     QMap<int, bool> keys;
 
     QGraphicsPixmapItem* turret;
+    QGraphicsPixmapItem* fireFlash;
 };
 
 

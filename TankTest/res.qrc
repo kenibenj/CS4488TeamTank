@@ -6,6 +6,14 @@
         <file>tankIdle.mp3</file>
         <file>tankMoving.mp3</file>
         <file>tankMovingAndIdle.mp3</file>
+        <file>bulletFire.wav</file>
+        <file>engineIdle.wav</file>
+        <file>engineMoving.wav</file>
+        <file>bulletFireTwo.wav</file>
+        <file>engineMovingTwo.wav</file>
+        <file>bulletFireThree.wav</file>
+        <file>engineIdleThree.wav</file>
+        <file>engineMovingThree.wav</file>
     </qresource>
     <qresource prefix="/images">
         <file>tank1.png</file>
@@ -33,5 +41,6 @@
         <file>greenCrosshairGearTwo.png</file>
         <file>greenCrosshairGearThree.png</file>
         <file>greenCrosshairGearFour.png</file>
+        <file>gunFlash.png</file>
     </qresource>
 </RCC>
