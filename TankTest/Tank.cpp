@@ -22,7 +22,8 @@ Tank::Tank(QGraphicsView* view, QGraphicsItem* parent) : QGraphicsPixmapItem(par
     setPixmap(QPixmap(":/images/greenChasis.png"));
     setTransformOriginPoint(boundingRect().width() / 2, boundingRect().height() / 2);
 
-    speed = .5;
+    traversalSpeed = .3;
+    rotationSpeed = .3;
     direction = 'w';
     counter = 0;
     changeTreads = false;
@@ -103,7 +104,8 @@ float Tank::calculateAngleSin(float speed, float angle) {
 
 void Tank::frame() {
 
-    // this code is what lets the tank follow the cursor. Every time the frame() function is called (about 144 times per second). 
+    // this code is what lets the tank turret, the muzzle flash, and the bullets follow the cursor. 
+    // Every time the frame() function is called (about 144 times per second) the angle from the cursor to the center of the tank is calculated.
     // The function declared variables below will be deleted when the function exits so I do not believe they will cause memory issues
     turret->setPos(x() + this->boundingRect().width() / 2 - turret->boundingRect().width() / 2, y() + this->boundingRect().height() / 2 - turret->boundingRect().height() / 2 - 7);
     QPointF cursorPos = QCursor::pos();
@@ -120,8 +122,6 @@ void Tank::frame() {
     int dxMuzzleFlash = calculateAngleCos(50, angle);
     int dyMuzzleFlash = calculateAngleSin(50, angle);
 
-    float dxTank = calculateAngleCos(speed, angleTank);
-    float dyTank = calculateAngleSin(speed, angleTank);
 
     fireFlash->setPos(x() + this->boundingRect().width() / 2 - fireFlash->boundingRect().width()/2, y() + this->boundingRect().height() / 2 - fireFlash->boundingRect().height() / 2);
     fireFlash->moveBy(dxMuzzleFlash, dyMuzzleFlash);
@@ -158,23 +158,30 @@ void Tank::frame() {
     }
 
     //Movement
+    float dxTank = calculateAngleCos(traversalSpeed, angleTank);
+    float dyTank = calculateAngleSin(traversalSpeed, angleTank);
+
+    // traverse
     if (keys[Qt::Key_W]) {
        setPos(x() + dxTank, y() + dyTank);
        direction = 'w';
     }
 
+    // rotate left
     if (keys[Qt::Key_A]) {
-        setRotation(rotation() - .5);
+        setRotation(rotation() - rotationSpeed);
         direction = 'a';
     }
 
+    // reverse
     if (keys[Qt::Key_S]) {
         setPos(x() - dxTank, y() - dyTank);
         direction = 's';
     }
 
+    // rotate right
     if (keys[Qt::Key_D]) {
-       setRotation(rotation() + .5);
+       setRotation(rotation() + rotationSpeed);
        direction = 'd';
     }
 
@@ -202,10 +209,12 @@ void Tank::frame() {
 
     if (fireRateTimer->isActive()) {
 
+        // Sets how long the muzzle flush graphic lasts after a shot
         if (fireRateTimer->remainingTime() / (float)fireRateTimer->interval() < .95) {
             fireFlash->setVisible(false);
         }
 
+        // Sets times intervals for dynamic crosshair graphics
         if (fireRateTimer->remainingTime() / (float)fireRateTimer->interval() > .8) {
             QCursor cursor = QCursor(QPixmap(":/images/greenCrosshairGearZero.png"));
             v->setCursor(cursor);

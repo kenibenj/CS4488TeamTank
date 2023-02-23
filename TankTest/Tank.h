@@ -32,7 +32,8 @@ private:
     QAudioOutput* movingAudioPlayer;
     QAudioOutput* idleAudioPlayer;
 
-    float speed;
+    float traversalSpeed;
+    float rotationSpeed;
     char direction;
     long counter;
     bool changeTreads;
