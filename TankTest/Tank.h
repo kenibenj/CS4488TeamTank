@@ -16,6 +16,8 @@ public:
     void focusOutEvent(QFocusEvent* event);
     bool isMoving();
     void createTurret();
+    float calculateAngleCos(float speed, float angle);
+    float calculateAngleSin(float speed, float angle);
 
 public slots:
     void spawn();
@@ -30,7 +32,7 @@ private:
     QAudioOutput* movingAudioPlayer;
     QAudioOutput* idleAudioPlayer;
 
-    int distance;
+    float speed;
     char direction;
     long counter;
     bool changeTreads;

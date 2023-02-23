@@ -22,7 +22,7 @@ Tank::Tank(QGraphicsView* view, QGraphicsItem* parent) : QGraphicsPixmapItem(par
     setPixmap(QPixmap(":/images/greenChasis.png"));
     setTransformOriginPoint(boundingRect().width() / 2, boundingRect().height() / 2);
 
-    distance = 2;
+    speed = .5;
     direction = 'w';
     counter = 0;
     changeTreads = false;
@@ -60,7 +60,6 @@ Tank::Tank(QGraphicsView* view, QGraphicsItem* parent) : QGraphicsPixmapItem(par
     keyTimer->start(7);
 
     this->setZValue(-3);
-
 }
 
 
@@ -92,31 +91,46 @@ void Tank::focusOutEvent(QFocusEvent* event)
     this->setFocus();
 }
 
+float Tank::calculateAngleCos(float speed, float angle) {
+    float dx = speed * cos(angle);
+    return dx;
+}
+
+float Tank::calculateAngleSin(float speed, float angle) {
+    float dy = speed * sin(angle);
+    return dy;
+}
+
 void Tank::frame() {
 
     // this code is what lets the tank follow the cursor. Every time the frame() function is called (about 144 times per second). 
     // The function declared variables below will be deleted when the function exits so I do not believe they will cause memory issues
     turret->setPos(x() + this->boundingRect().width() / 2 - turret->boundingRect().width() / 2, y() + this->boundingRect().height() / 2 - turret->boundingRect().height() / 2 - 7);
-    QPoint cursorPos = QCursor::pos();
-    QPointF cursorScenePos = scene()->views().first()->mapFromGlobal(cursorPos);
+    QPointF cursorPos = QCursor::pos();
+    QPointF cursorViewPos = v->mapFromGlobal(cursorPos);
+    QPointF tankPos = this->pos();
+    QPointF tankViewPos = v->mapFromScene(tankPos);
 
-    float angle = (atan2(cursorScenePos.y() - (y() + (this->boundingRect().height() / 2)), cursorScenePos.x() - (x() + (this->boundingRect().width()) / 2)));
+    float angle = (atan2(cursorViewPos.y() - (tankViewPos.y() + (this->boundingRect().height() / 2)), cursorViewPos.x() - (tankViewPos.x() + (this->boundingRect().width()) / 2)));
     float angleDegrees = angle * (180 / M_PI);
-
     turret->setRotation(angleDegrees + 90);
+    float angleTank = (rotation() - 90) * (M_PI / 180);
 
     // Calculate x and y velocity for tank gun muzzle flash
-    int dx = 50 * cos(angle);
-    int dy = 50 * sin(angle);
+    int dxMuzzleFlash = calculateAngleCos(50, angle);
+    int dyMuzzleFlash = calculateAngleSin(50, angle);
+
+    float dxTank = calculateAngleCos(speed, angleTank);
+    float dyTank = calculateAngleSin(speed, angleTank);
 
     fireFlash->setPos(x() + this->boundingRect().width() / 2 - fireFlash->boundingRect().width()/2, y() + this->boundingRect().height() / 2 - fireFlash->boundingRect().height() / 2);
-    fireFlash->moveBy(dx, dy);
+    fireFlash->moveBy(dxMuzzleFlash, dyMuzzleFlash);
     fireFlash->setTransformOriginPoint(fireFlash->boundingRect().width() / 2, fireFlash->boundingRect().height() / 2);
     fireFlash->setRotation(angleDegrees + 90);
 
 
     //Makes view camera follow the tank
-    //v->centerOn(this);
+    v->centerOn(this);
 
     // Checking to see how the moving sound should be handled
     if ((isMoving() == true) && (movingHandler->playbackState() != QMediaPlayer::PlayingState)) {
@@ -145,35 +159,23 @@ void Tank::frame() {
 
     //Movement
     if (keys[Qt::Key_W]) {
-        if (pos().y() > 0) {
-            setPos(x(), y() - distance);
-            setRotation(0); // facing upwards
-            direction = 'w';
-        }
+       setPos(x() + dxTank, y() + dyTank);
+       direction = 'w';
     }
 
-    else if (keys[Qt::Key_A]) {
-        if (pos().x() > 0) {
-            setPos(x() - distance, y());
-            setRotation(270); // facing left
-            direction = 'a';
-        }
+    if (keys[Qt::Key_A]) {
+        setRotation(rotation() - .5);
+        direction = 'a';
     }
 
-    else if (keys[Qt::Key_S]) {
-        if (pos().y() + distance < scene()->height() - boundingRect().height()) {
-            setPos(x(), y() + distance);
-            setRotation(180); // facing downwards
-            direction = 's';
-        }
+    if (keys[Qt::Key_S]) {
+        setPos(x() - dxTank, y() - dyTank);
+        direction = 's';
     }
 
-    else if (keys[Qt::Key_D]) {
-        if (pos().x() + distance < scene()->width() - boundingRect().width()) {
-            setPos(x() + distance, y());
-            setRotation(90); // facing right
-            direction = 'd';
-        }
+    if (keys[Qt::Key_D]) {
+       setRotation(rotation() + .5);
+       direction = 'd';
     }
 
     // Shooting (Spacebar)
@@ -224,7 +226,6 @@ void Tank::frame() {
             QCursor cursor = QCursor(QPixmap(":/images/greenCrosshairGearFour.png"));
             v->setCursor(cursor);
         }
-
     }
     else {
         QCursor cursor = QCursor(QPixmap(":/images/crosshair.png"));
@@ -246,4 +247,3 @@ void Tank::spawn() {
     Enemy* enemy = new Enemy();
     scene()->addItem(enemy);
 }
-

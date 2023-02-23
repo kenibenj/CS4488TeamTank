@@ -27,7 +27,7 @@ GameRunner::GameRunner() {
     Tank* tank = new Tank(view);
 
     scene->addItem(tank);
-    scene->setSceneRect(0, 0, 1200, 900);
+    scene->setSceneRect(0, 0, 2400, 1800);
 
     //Create map using map_creator
     map_creator.CreateMap(scene);
@@ -47,7 +47,11 @@ GameRunner::GameRunner() {
     QBrush back_brush(QColor(255, 243, 240)); //bricks & box
     //QBrush back_brush(QColor(224, 255, 224)); //forest
 
-    scene->setBackgroundBrush(back_brush);
+    QPixmap backgroundImage(":/images/bg.png");
+    QGraphicsPixmapItem* background = new QGraphicsPixmapItem();
+    background->setPixmap(backgroundImage.scaled(scene->width(), scene->height(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation));
+    background->setZValue(-10);
+    scene->addItem(background);
 
     //  scene->addLine(-w, -h + 75, w, -h + 75, QPen(Qt::black));//upper bound
       //scene->addLine(-w, h, w, h, QPen(Qt::black));//lower bound
